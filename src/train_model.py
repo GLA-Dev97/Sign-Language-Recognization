@@ -125,6 +125,18 @@ def main():
         seed=DATA_SPLIT_SEED,
     )
 
+    # Use a dedicated holdout iterator for metrics/reporting so evaluation is
+    # deterministic and independent from the validation stream used during fit.
+    eval_gen = eval_datagen.flow_from_directory(
+        args.data_dir,
+        target_size=IMG_SIZE,
+        batch_size=BATCH_SIZE,
+        class_mode="categorical",
+        subset="validation",
+        shuffle=False,
+        seed=DATA_SPLIT_SEED,
+    )
+
     num_classes = len(train_gen.class_indices)
     model = build_cnn(num_classes)
 
@@ -145,10 +157,10 @@ def main():
 
     plot_history(history, os.path.join(args.outputs, "training_history.png"))
 
-    val_gen.reset()
-    probs = model.predict(val_gen)
+    eval_gen.reset()
+    probs = model.predict(eval_gen)
     y_pred = np.argmax(probs, axis=1)
-    y_true = val_gen.classes
+    y_true = eval_gen.classes
 
     idx_to_class = {v: k for k, v in train_gen.class_indices.items()}
     class_names = [idx_to_class[i] for i in range(len(idx_to_class))]
