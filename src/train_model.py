@@ -15,6 +15,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 IMG_SIZE = (64, 64)
 BATCH_SIZE = 32
+DATA_SPLIT_SEED = 42
 
 
 def build_cnn(num_classes: int) -> tf.keras.Model:
@@ -89,7 +90,7 @@ def main():
     os.makedirs(os.path.dirname(args.model_path), exist_ok=True)
     os.makedirs(args.outputs, exist_ok=True)
 
-    datagen = ImageDataGenerator(
+    train_datagen = ImageDataGenerator(
         rescale=1.0 / 255.0,
         validation_split=0.2,
         rotation_range=20,
@@ -100,21 +101,28 @@ def main():
         horizontal_flip=True,
     )
 
-    train_gen = datagen.flow_from_directory(
+    eval_datagen = ImageDataGenerator(
+        rescale=1.0 / 255.0,
+        validation_split=0.2,
+    )
+
+    train_gen = train_datagen.flow_from_directory(
         args.data_dir,
         target_size=IMG_SIZE,
         batch_size=BATCH_SIZE,
         class_mode="categorical",
         subset="training",
+        seed=DATA_SPLIT_SEED,
     )
 
-    val_gen = datagen.flow_from_directory(
+    val_gen = eval_datagen.flow_from_directory(
         args.data_dir,
         target_size=IMG_SIZE,
         batch_size=BATCH_SIZE,
         class_mode="categorical",
         subset="validation",
         shuffle=False,
+        seed=DATA_SPLIT_SEED,
     )
 
     num_classes = len(train_gen.class_indices)
